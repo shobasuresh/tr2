@@ -1,0 +1,109 @@
+-- Tables product1,product_price_history,product_check
+
+CREATE or REPLACE TRIGGER price_history_trigger
+
+-- The one below is the Triggering Statement or event
+ BEFORE UPDATE OF  unit_price ON product FOR EACH ROW
+
+-- Trigger Action
+ BEGIN 
+INSERT INTO product_price_history VALUES (:old.pdt_id, :old.pdt_name,  :old.supp_name, :old.unit_price);
+ END; 
+
+
+CREATE or REPLACE TRIGGER Before_Update_Stat_product
+ BEFORE UPDATE OF  unit_price ON product 
+Begin 
+insert into product_check values('before update',sysdate);
+END $$
+
+
+
+CREATE or REPLACE TRIGGER Before_Update_Stat_product1
+ BEFORE UPDATE ON product
+Begin 
+raise_application_error(-20001,'Do not update');
+END; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Now lets execute a update statement on table product. 
+
+ UPDATE PRODUCT SET unit_price = 800  WHERE pdt_id in (100,101);
+
+ SELECT * FROM product_check;
+
+
+alter trigger trigger_name disable;
+alter trigger trigger_name enable;
+
+auditing triggers
+
+Starting with Oracle8i, Oracle introduced special triggers that are not associated with specific DML events (e.g., INSERT, UPDATE, and DELETE). These system-level triggers included database startup triggers, DDL triggers, and end-user login/logoff triggers.
+
+While Oracle provided the functionality for these new triggers, it was not clear how they could be used in order to track system-wide usage.  The initial implementation of system-level triggers for end-user tracking is quite new and, as such, is still a bit lacking in robust functionality.
+
+This example creates an AFTER statement trigger on any DDL statement CREATE.
+
+SQL> create or replace trigger trig1 after create on schema
+  2  begin
+  3  dbms_output.put_line('Table Created');
+  4  end;
+  5  /
+
+Trigger created.
+
+
+SQL> create or replace trigger trig1 after logon on database
+  2  begin
+  3  insert into stats values(user,sysdate,to_char(Sysdate,'hh24:mi:ss');
+  4  end;
+  5  /
+
+
+select substr((to_char(Sysdate,'hh24:mi:ss')) ,1,2) from dual;
+
+
+mutating trigger
+
+A mutating trigger occurs in Oracle when the table that originally fired the triggering event is being accessed in the body of the trigger code.
+
+This action is forbidden because the table is in middle of a transaction, and referencing the same table again in the middle of the updating action causes the trigger to mutate.
+
+  1   create or replace trigger t1 before update on trial for 
+each row
+  2          begin
+  3    update trial set eno=:new.eno;
+  4*        end;
+SQL> /
+
+Trigger created.
+
+SQL> update trial set sal=99 where eno=3;
+update trial set sal=99 where eno=3
+       *
+ERROR at line 1:
+ORA-04091: table TRAIN0.TRIAL is mutating, trigger/function may not see it
+ORA-06512: at "TRAIN0.T1", line 2
+ORA-04088: error during execution of trigger 'TRAIN0.T1'
+
+
+
+
+
+
+
+
+
